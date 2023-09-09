@@ -10,12 +10,14 @@ capitalize() {
 }
 
 prql-import() { 
+  separator="${2:-__}"
+  prefix="${3:-$1}"
   if ([[ -d "$1" ]] && [[ -f "$1/$(capitalize $1).prql" ]]); then
-    cd "$1" && prql-mod "$(capitalize $1).prql"
+    cd "$1" && prql-mod "$(capitalize $1).prql" "$separator" "$prefix"
   elif [[ -f "$1.prql" ]]; then
-    cat "$1.prql" | sed -r "s/^let[ ]+/let $1${2:-__}/"
+    cat "$1.prql" | sed -r "s/^let[ ]+/let $prefix$separator/"
   else
-    echo "Could not import '$library_name'. Aborting ..."
+    echo "Could not import '$1'. Aborting ..."
     return 1
   fi
 }
@@ -33,13 +35,16 @@ prql-mod() {
   for line in $matches; do
     if [[ "$line" =~ ^import[[:space:]]+([[:alnum:]]+)[[:space:]]* ]]; then
       library_name="${BASH_REMATCH[1]}"
-      import_replacement="$(prql-import "$library_name" "$separator")"
+      prefix="${3:-$library_name}"
+      import_replacement="$(prql-import "$library_name" "$separator" "$prefix")"
       if [[ $? -ne 0 ]]; then
 	echo "ERROR: $import_replacement"
         return 1
       fi
+      # Replace the import statement with the code from the module/library
       output=$(echo "$output" | awk -v import_replacement="$import_replacement" '{gsub("'"$line"'", import_replacement)}1')
-      output=$(echo "$output" | sed -r "s/\<$library_name\>\./$library_name$separator/g")
+      # Replace references to the module/library
+      output=$(echo "$output" | sed -r "s/\<$library_name\>\./$prefix$separator/g")
     fi
   done
   echo "$output"
