@@ -10,16 +10,12 @@ capitalize() {
 }
 
 prql-import() { 
-  #echo "prql-import: $1 $2"
   if ([[ -d "$1" ]] && [[ -f "$1/$(capitalize $1).prql" ]]); then
-    #echo "Importing library $1/$(capitalize $1).prql ..."
-    #echo "dir: $(pwd)"
     cd "$1" && prql-mod "$(capitalize $1).prql"
   elif [[ -f "$1.prql" ]]; then
-    #echo "Importing project $1 ..."
     cat "$1.prql" | sed -r "s/^let[ ]+/let $1${2:-__}/"
   else
-    echo "Could not import $library_name. Aborting ..."
+    echo "Could not import '$library_name'. Aborting ..."
     return 1
   fi
 }
@@ -35,13 +31,11 @@ prql-mod() {
   # Iterate over the matches using a for loop
   IFS=$'\n'  # Set the Internal Field Separator to newline to iterate over lines
   for line in $matches; do
-    #echo $line
     if [[ "$line" =~ ^import[[:space:]]+([[:alnum:]]+)[[:space:]]* ]]; then
       library_name="${BASH_REMATCH[1]}"
-      #echo "lib: $library_name"
       import_replacement="$(prql-import "$library_name" "$separator")"
       if [[ $? -ne 0 ]]; then
-	echo -e "ERROR:\n$import_replacement"
+	echo "ERROR: $import_replacement"
         return 1
       fi
       output=$(echo "$output" | awk -v import_replacement="$import_replacement" '{gsub("'"$line"'", import_replacement)}1')
