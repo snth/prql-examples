@@ -1,19 +1,45 @@
 prql() { 
+  prql-init
   input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
-  query="$( echo "$input" | prql-lib )"
-  output="${2:--}"
+  destinaton="${2:--}"
   options="${@:3}"
+  prql-lib "$@" 	# TODO: should this use just $input?
+  query="$PRQL_LIB_OUTPUT"
+  prql-compile "$query" "$destination" "$options"
+  if [[ $? -ne 0 ]]; then
+    prql-cleanup
+    return $?
+  fi
+  sql="$PRQL_COMPILE_OUTPUT"
+  echo "$sql"
+  prql-cleanup
+}
+
+prql-init() {
+  ORIGINAL_PRQL_COMPILE_OPTIONS="$PRQL_COMPILE_OPTIONS"
+  ORIGINAL_PRQL_EXEC_COMMAND="$PRQL_EXEC_COMMAND"
+}
+
+prql-cleanup() {
+  PRQL_COMPILE_OPTIONS="$ORIGINAL_PRQL_COMPILE_OPTIONS"
+  unset ORIGINAL_PRQL_COMPILE_OPTIONS
+  PRQL_EXEC_COMMAND="$ORIGINAL_PRQL_EXEC_COMMAND"
+  unset ORIGINAL_PRQL_EXEC_COMMAND
+}
+
+prql-compile() { 
+  IFS=" "
+  query="$1"
+  options="${@:2}"
   if [ -n "$PRQL_COMPILE_OPTIONS" ]; then
     echo "Using PRQL_COMPILE_OPTIONS=$PRQL_COMPILE_OPTIONS" >&2
     options="${options[@]} ${PRQL_COMPILE_OPTIONS}"
   fi
-  echo "DEBUG: prqlc compile - $output ${options[@]}" >&2
-  result="$( echo "$query" | prqlc compile - "$output" "${options[@]}")"
+  PRQL_COMPILE_OUTPUT="$( echo "$query" | prqlc compile - - )"
   if [[ $? -ne 0 ]]; then
     echo -e "\n# QUERY\n\n$query\n\n"
     return 1
   fi
-  echo "$result"
 }
 
 prql-git() {
@@ -24,18 +50,29 @@ prql-git() {
 
 prql-exec() {
   # Looks for PRQL_EXEC_COMMAND and passes output to that if present
-  sql=$( prql "$@" )
+  prql-init
+  input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
+  destinaton="${2:--}"
+  options="${@:3}"
+  prql-lib "$@" 	# TODO: should this use just $input?
+  query="$PRQL_LIB_OUTPUT"
+  prql-compile "$query" "$destination" "$options"
+  if [[ $? -ne 0 ]]; then
+    prql-cleanup
+    return $?
+  fi
+  sql="$PRQL_COMPILE_OUTPUT"
   echo "$( env | grep PRQL_ )" >&2
-  if (exit $?) && [ -n "$PRQL_EXEC_COMMAND" ]; then
+  if [ -n "$PRQL_EXEC_COMMAND" ]; then
     echo "Using PRQL_EXEC_COMMAND=$PRQL_EXEC_COMMAND" >&2
-    exec_cmd="$PRQL_EXEC_COMMAND"
-    echo "DEBUG: $exec_cmd $sql" >&2
-    $exec_cmd $sql
+    $PRQL_EXEC_COMMAND "$sql"
   else
     echo "ERROR: No PRQL_EXEC_COMMAND found!"
     echo -e "# SQL\n\n$sql"
+    prql-cleanup
     return 1
   fi
+  prql-cleanup
 }
 
 capitalize() {
@@ -47,15 +84,19 @@ capitalize() {
 
 prql-import() { 
   # FIXME: Add support for aliases
-  separator="${2:-__}"
-  prefix="${3:-$1}"
-  prql_lib_path="${PRQL_LIB_PATH:-.}"
+  local output=""
+  local separator="${2:-__}"
+  local prefix="${3:-$1}"
+  local prql_lib_path="${PRQL_LIB_PATH:-.}"
   PRQL_LIB_PATH=""
   echo "Using PRQL_LIB_PATH=$prql_lib_path" >&2
   IFS=":"
   for lib_dir in $prql_lib_path; do
     if ([[ -d "$lib_dir/$1" ]] && [[ -f "$lib_dir/$1/$(capitalize $1).prql" ]]); then
-      output=$(cd "$lib_dir/$1" && prql-lib "$(capitalize $1).prql" "$separator" "$prefix")
+      pushd "$lib_dir/$1" > /dev/null
+      prql-lib "$(capitalize $1).prql" "$separator" "$prefix"
+      popd > /dev/null
+      output="$PRQL_LIB_OUTPUT"
       echo "Imported $lib_dir/$1/$(capitalize $1).prql" >&2
       # Also source .env file if present for prql-exec
       if [ -f "$lib_dir/$1/.env" ]; then
@@ -63,11 +104,9 @@ prql-import() {
         source "$lib_dir/$1/.env"
 	if [ -n "PRQL_EXEC_COMMAND" ]; then
 	  export PRQL_EXEC_COMMAND="$PRQL_EXEC_COMMAND"
-	  echo export PRQL_EXEC_COMMAND="$PRQL_EXEC_COMMAND" >&2
 	fi
 	if [ -n "PRQL_COMPILE_OPTIONS" ]; then
 	  export PRQL_COMPILE_OPTIONS="$PRQL_COMPILE_OPTIONS"
-	  echo export PRQL_COMPILE_OPTIONS="$PRQL_COMPILE_OPTIONS" >&2
 	fi
       fi
       break
@@ -79,24 +118,25 @@ prql-import() {
   done
   # apply the prefix to all let statements
   output=$(echo "$output" | sed -r "s/^let[ ]+/let $prefix$separator/")
-  echo "$output"
+  PRQL_IMPORT_OUTPUT="$output"
 }
 
 prql-lib() { 
-  input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
-  output="$input"
-  separator="${2:-__}"
+  local input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
+  local output="$input"
+  local separator="${2:-__}"
   # Define the pattern to match lines
-  match_pattern="^import[[:space:]]\{1,\}[[:alnum:]]\{1,\}[[:space:]]\{0,\}$"
+  local match_pattern="^import[[:space:]]\{1,\}[[:alnum:]]\{1,\}[[:space:]]\{0,\}$"
   # Use sed to extract lines matching the pattern and capture the two words following "import"
-  matches=$(echo "$output" | sed -n "/$match_pattern/p")
+  local matches=$(echo "$output" | sed -n "/$match_pattern/p")
   # Iterate over the matches using a for loop
   IFS=$'\n'  # Set the Internal Field Separator to newline to iterate over lines
   for line in $matches; do
     if [[ "$line" =~ ^import[[:space:]]+([[:alnum:]]+)[[:space:]]* ]]; then
-      library_name="${BASH_REMATCH[1]}"
-      prefix="${3:-$library_name}"
-      import_replacement="$(prql-import "$library_name" "$separator" "$prefix")"
+      local library_name="${BASH_REMATCH[1]}"
+      local prefix="${3:-$library_name}"
+      prql-import "$library_name" "$separator" "$prefix"
+      local import_replacement="$PRQL_IMPORT_OUTPUT"
       if [[ $? -ne 0 ]]; then
 	echo "ERROR: $import_replacement"
         return 1
@@ -108,5 +148,5 @@ prql-lib() {
     fi
   done
   # FIXME: Test for remaining import statements and report error
-  echo "$output"
+  PRQL_LIB_OUTPUT="$output"
 }
