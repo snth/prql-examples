@@ -2,7 +2,7 @@
 
 - DONE: Rename to prql-exec
 - DONE: make script executable
-- Add private libraries gitignore
+- DONE: Add private libraries gitignore
 - Remove debugging output
 - Add scrooge
 - Add psql example
