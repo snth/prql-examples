@@ -1,5 +1,12 @@
 prql() { 
-  ([ -z "$1" ] || [ "$1" == "-" ] || [ -f "$1" ]) && prqlc compile "$@" || echo "$1" | prqlc compile - "${@:2}"; 
+  input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
+  query="$( echo "$input" | prql-lib )"
+  output="$( echo "$query" | prqlc compile - "${@:2}" )"
+  if [[ $? -ne 0 ]]; then
+    echo -e "\n# QUERY\n\n$query\n\n"
+    return 1
+  fi
+  echo "$output"
 }
 
 capitalize() {
