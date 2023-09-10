@@ -1,12 +1,41 @@
 prql() { 
   input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
   query="$( echo "$input" | prql-lib )"
-  output="$( echo "$query" | prqlc compile - "${@:2}" )"
+  output="${2:--}"
+  options="${@:3}"
+  if [ -n "$PRQL_COMPILE_OPTIONS" ]; then
+    echo "Using PRQL_COMPILE_OPTIONS=$PRQL_COMPILE_OPTIONS" >&2
+    options="${options[@]} ${PRQL_COMPILE_OPTIONS}"
+  fi
+  echo "DEBUG: prqlc compile - $output ${options[@]}" >&2
+  result="$( echo "$query" | prqlc compile - "$output" "${options[@]}")"
   if [[ $? -ne 0 ]]; then
     echo -e "\n# QUERY\n\n$query\n\n"
     return 1
   fi
-  echo "$output"
+  echo "$result"
+}
+
+prql-git() {
+  # Requires mergestat
+  sql=$(prql-lib "$1" | prqlc compile --target=sql.sqlite --hide-signature-comment)
+  (exit $?) && mergestat "${sql}" ${@:2}
+}
+
+prql-exec() {
+  # Looks for PRQL_EXEC_COMMAND and passes output to that if present
+  sql=$( prql "$@" )
+  echo "$( env | grep PRQL_ )" >&2
+  if (exit $?) && [ -n "$PRQL_EXEC_COMMAND" ]; then
+    echo "Using PRQL_EXEC_COMMAND=$PRQL_EXEC_COMMAND" >&2
+    exec_cmd="$PRQL_EXEC_COMMAND"
+    echo "DEBUG: $exec_cmd $sql" >&2
+    $exec_cmd $sql
+  else
+    echo "ERROR: No PRQL_EXEC_COMMAND found!"
+    echo -e "# SQL\n\n$sql"
+    return 1
+  fi
 }
 
 capitalize() {
@@ -17,18 +46,30 @@ capitalize() {
 }
 
 prql-import() { 
+  # FIXME: Add support for aliases
   separator="${2:-__}"
   prefix="${3:-$1}"
-  if [ -n "$PRQL_LIB_PATH" ]; then
-    echo "Using PRQL_LIB_PATH=$PRQL_LIB_PATH" >&2
-    prql_lib_path="${PRQL_LIB_PATH:-.}"
-    PRQL_LIB_PATH=""
-  fi
+  prql_lib_path="${PRQL_LIB_PATH:-.}"
+  PRQL_LIB_PATH=""
+  echo "Using PRQL_LIB_PATH=$prql_lib_path" >&2
   IFS=":"
   for lib_dir in $prql_lib_path; do
     if ([[ -d "$lib_dir/$1" ]] && [[ -f "$lib_dir/$1/$(capitalize $1).prql" ]]); then
       output=$(cd "$lib_dir/$1" && prql-lib "$(capitalize $1).prql" "$separator" "$prefix")
       echo "Imported $lib_dir/$1/$(capitalize $1).prql" >&2
+      # Also source .env file if present for prql-exec
+      if [ -f "$lib_dir/$1/.env" ]; then
+        #cat "$lib_dir/$1/.env" >&2
+        source "$lib_dir/$1/.env"
+	if [ -n "PRQL_EXEC_COMMAND" ]; then
+	  export PRQL_EXEC_COMMAND="$PRQL_EXEC_COMMAND"
+	  echo export PRQL_EXEC_COMMAND="$PRQL_EXEC_COMMAND" >&2
+	fi
+	if [ -n "PRQL_COMPILE_OPTIONS" ]; then
+	  export PRQL_COMPILE_OPTIONS="$PRQL_COMPILE_OPTIONS"
+	  echo export PRQL_COMPILE_OPTIONS="$PRQL_COMPILE_OPTIONS" >&2
+	fi
+      fi
       break
     elif [[ -f "$lib_dir/$1.prql" ]]; then
       output=$(cat "$lib_dir/$1.prql")
@@ -68,10 +109,4 @@ prql-lib() {
   done
   # FIXME: Test for remaining import statements and report error
   echo "$output"
-}
-
-prql-git() {
-  # Requires mergestat
-  sql=$(prql-lib "$1" | prqlc compile --target=sql.sqlite --hide-signature-comment)
-  (exit $?) && mergestat "${sql}" ${@:2}
 }
