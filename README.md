@@ -19,8 +19,8 @@ export PRQL_LIB_PATH=".:$(pwd)"
 
 See the READMEs of some of the default libraries.
 
-- [git/README.md]()
-- [os/README.md]()
+- [git/README.md](git/README.md)
+- [os/README.md](os/README.md)
 
 ## Adding libraries
 
