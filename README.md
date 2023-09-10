@@ -11,7 +11,7 @@ as PRQL libraries.
 ```sh
 git clone https://github.com/snth/prql-exec.git
 cd prql-exec
-ln -s prql-exec ~/.local/bin/prql-exec
+ln -sf "$(pwd)/prql-exec" ~/.local/bin/prql-exec
 export PRQL_LIB_PATH=".:$(pwd)"
 ```
 

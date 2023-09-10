@@ -16,17 +16,17 @@ prql-exec() {
     return $?
   fi
   sql="$PRQL_COMPILE_OUTPUT"
-  echo "$( env | grep PRQL_ )" >&2
+  #echo "$( env | grep PRQL_ )" >&2
   if [ -n "$PRQL_EXEC_COMMAND" ]; then
-    echo "Using PRQL_EXEC_COMMAND=$PRQL_EXEC_COMMAND" >&2
+    #echo "Using PRQL_EXEC_COMMAND=$PRQL_EXEC_COMMAND" >&2
     $PRQL_EXEC_COMMAND "$sql"
   else
-    echo "ERROR: No PRQL_EXEC_COMMAND found!"
-    echo -e "# SQL\n\n$sql"
+    # When no PRQL_EXEC_COMMAND is given we behave just like
+    # prqlc compile and echo the SQL.
+    #echo "ERROR: No PRQL_EXEC_COMMAND found!"
     prql-cleanup
-    return 1
+    echo $sql
   fi
-  prql-cleanup
 }
 
 prql() { 
@@ -42,8 +42,8 @@ prql() {
     return $?
   fi
   sql="$PRQL_COMPILE_OUTPUT"
-  echo "$sql"
   prql-cleanup
+  echo "$sql"
 }
 
 prql-init() {
@@ -63,7 +63,7 @@ prql-compile() {
   query="$1"
   options="${@:2}"
   if [ -n "$PRQL_COMPILE_OPTIONS" ]; then
-    echo "Using PRQL_COMPILE_OPTIONS=$PRQL_COMPILE_OPTIONS" >&2
+    #echo "Using PRQL_COMPILE_OPTIONS=$PRQL_COMPILE_OPTIONS" >&2
     options="${options[@]} ${PRQL_COMPILE_OPTIONS}"
   fi
   PRQL_COMPILE_OUTPUT="$( echo "$query" | prqlc compile - - )"
@@ -87,7 +87,7 @@ prql-import() {
   local prefix="${3:-$1}"
   local prql_lib_path="${PRQL_LIB_PATH:-.}"
   PRQL_LIB_PATH=""
-  echo "Using PRQL_LIB_PATH=$prql_lib_path" >&2
+  #echo "Using PRQL_LIB_PATH=$prql_lib_path" >&2
   IFS=":"
   for lib_dir in $prql_lib_path; do
     if ([[ -d "$lib_dir/$1" ]] && [[ -f "$lib_dir/$1/$(capitalize $1).prql" ]]); then
@@ -95,7 +95,7 @@ prql-import() {
       prql-lib "$(capitalize $1).prql" "$separator" "$prefix"
       popd > /dev/null
       output="$PRQL_LIB_OUTPUT"
-      echo "Imported $lib_dir/$1/$(capitalize $1).prql" >&2
+      #echo "Imported $lib_dir/$1/$(capitalize $1).prql" >&2
       # Also source .env file if present for prql-exec
       if [ -f "$lib_dir/$1/.env" ]; then
         #cat "$lib_dir/$1/.env" >&2
@@ -110,7 +110,7 @@ prql-import() {
       break
     elif [[ -f "$lib_dir/$1.prql" ]]; then
       output=$(cat "$lib_dir/$1.prql")
-      echo "Imported $lib_dir/$1.prql" >&2
+      #echo "Imported $lib_dir/$1.prql" >&2
       break
     fi
   done
