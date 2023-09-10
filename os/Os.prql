@@ -1,0 +1,3 @@
+
+#let query = table -> from s"SELECT * FROM {table}"
+let query = table -> table
