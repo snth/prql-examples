@@ -13,7 +13,7 @@ prql-import() {
   separator="${2:-__}"
   prefix="${3:-$1}"
   if ([[ -d "$1" ]] && [[ -f "$1/$(capitalize $1).prql" ]]); then
-    output=$(cd "$1" && prql-mod "$(capitalize $1).prql" "$separator" "$prefix")
+    output=$(cd "$1" && prql-lib "$(capitalize $1).prql" "$separator" "$prefix")
   elif [[ -f "$1.prql" ]]; then
     output=$(cat "$1.prql")
   else
@@ -25,7 +25,7 @@ prql-import() {
   echo "$output"
 }
 
-prql-mod() { 
+prql-lib() { 
   input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
   output="$input"
   separator="${2:-__}"
@@ -55,6 +55,6 @@ prql-mod() {
 
 prql-git() {
   # Requires mergestat
-  sql=$(prql-mod "$1" | prqlc compile --target=sql.sqlite --hide-signature-comment)
+  sql=$(prql-lib "$1" | prqlc compile --target=sql.sqlite --hide-signature-comment)
   (exit $?) && mergestat "${sql}" ${@:2}
 }
