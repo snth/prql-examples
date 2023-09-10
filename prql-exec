@@ -1,8 +1,6 @@
 #!/bin/bash
 
-prql-exec "$@"
-
-prql-exec() {
+prql-exec-fn() {
   # Looks for PRQL_EXEC_COMMAND and passes output to that if present
   prql-init
   input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
@@ -18,8 +16,8 @@ prql-exec() {
   sql="$PRQL_COMPILE_OUTPUT"
   #echo "$( env | grep PRQL_ )" >&2
   if [ -n "$PRQL_EXEC_COMMAND" ]; then
-    #echo "Using PRQL_EXEC_COMMAND=$PRQL_EXEC_COMMAND" >&2
-    $PRQL_EXEC_COMMAND "$sql"
+    echo "Using PRQL_EXEC_COMMAND=$PRQL_EXEC_COMMAND" >&2
+    echo -e "$sql\n;" | $PRQL_EXEC_COMMAND
   else
     # When no PRQL_EXEC_COMMAND is given we behave just like
     # prqlc compile and echo the SQL.
@@ -148,3 +146,5 @@ prql-lib() {
   # FIXME: Test for remaining import statements and report error
   PRQL_LIB_OUTPUT="$output"
 }
+
+prql-exec-fn "$@"
