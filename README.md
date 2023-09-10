@@ -9,9 +9,9 @@ as PRQL libraries.
 ### Install prql-exec
 
 ```sh
-git clone https://github.com/snth/prql-examples.git
-cd prql-examples
-source prql-cli.sh
+git clone https://github.com/snth/prql-exec.git
+cd prql-exec
+ln -s prql-exec ~/.local/bin/prql-exec
 export PRQL_LIB_PATH=".:$(pwd)"
 ```
 
