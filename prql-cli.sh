@@ -53,3 +53,8 @@ prql-mod() {
   echo "$output"
 }
 
+prql-git() {
+  # Requires mergestat
+  sql=$(prql-mod "$1" | prqlc compile --target=sql.sqlite --hide-signature-comment)
+  (exit $?) && mergestat "${sql}" ${@:2}
+}
