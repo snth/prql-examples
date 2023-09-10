@@ -17,11 +17,11 @@ export PRQL_LIB_PATH=".:$(pwd)"
 
 ## Example usage
 
-See the READMEs of some of the default libraries.
+The libraries included by default are:
 
-- [duckdb/README.md](duckdb/README.md)
-- [git/README.md](git/README.md)
-- [os/README.md](os/README.md)
+- [duckdb](duckdb/README.md)
+- [git (mergestat)](git/README.md)
+- [os (osquery)](os/README.md)
 
 ## Adding libraries
 
