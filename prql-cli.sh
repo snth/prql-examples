@@ -13,13 +13,16 @@ prql-import() {
   separator="${2:-__}"
   prefix="${3:-$1}"
   if ([[ -d "$1" ]] && [[ -f "$1/$(capitalize $1).prql" ]]); then
-    cd "$1" && prql-mod "$(capitalize $1).prql" "$separator" "$prefix"
+    output=$(cd "$1" && prql-mod "$(capitalize $1).prql" "$separator" "$prefix")
   elif [[ -f "$1.prql" ]]; then
-    cat "$1.prql" | sed -r "s/^let[ ]+/let $prefix$separator/"
+    output=$(cat "$1.prql")
   else
     echo "Could not import '$1'. Aborting ..."
     return 1
   fi
+  # apply the prefix to all let statements
+  output=$(echo "$output" | sed -r "s/^let[ ]+/let $prefix$separator/")
+  echo "$output"
 }
 
 prql-mod() { 
