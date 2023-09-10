@@ -120,7 +120,7 @@ prql-exec-fn() {
   #echo "$( env | grep PRQL_ )" >&2
   if [ -n "$PRQL_EXEC_COMMAND" ]; then
     #echo "Using PRQL_EXEC_COMMAND=$PRQL_EXEC_COMMAND" >&2
-    echo -e "$sql\n;" | $PRQL_EXEC_COMMAND
+    echo -e "$sql\n;" | eval $PRQL_EXEC_COMMAND
   else
     # When no PRQL_EXEC_COMMAND is given we behave just like
     # prqlc compile and echo the SQL.
