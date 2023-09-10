@@ -19,14 +19,23 @@ capitalize() {
 prql-import() { 
   separator="${2:-__}"
   prefix="${3:-$1}"
-  if ([[ -d "$1" ]] && [[ -f "$1/$(capitalize $1).prql" ]]); then
-    output=$(cd "$1" && prql-lib "$(capitalize $1).prql" "$separator" "$prefix")
-  elif [[ -f "$1.prql" ]]; then
-    output=$(cat "$1.prql")
-  else
-    echo "Could not import '$1'. Aborting ..."
-    return 1
+  if [ -n "$PRQL_LIB_PATH" ]; then
+    echo "Using PRQL_LIB_PATH=$PRQL_LIB_PATH" >&2
+    prql_lib_path="${PRQL_LIB_PATH:-.}"
+    PRQL_LIB_PATH=""
   fi
+  IFS=":"
+  for lib_dir in $prql_lib_path; do
+    if ([[ -d "$lib_dir/$1" ]] && [[ -f "$lib_dir/$1/$(capitalize $1).prql" ]]); then
+      output=$(cd "$lib_dir/$1" && prql-lib "$(capitalize $1).prql" "$separator" "$prefix")
+      echo "Imported $lib_dir/$1/$(capitalize $1).prql" >&2
+      break
+    elif [[ -f "$lib_dir/$1.prql" ]]; then
+      output=$(cat "$lib_dir/$1.prql")
+      echo "Imported $lib_dir/$1.prql" >&2
+      break
+    fi
+  done
   # apply the prefix to all let statements
   output=$(echo "$output" | sed -r "s/^let[ ]+/let $prefix$separator/")
   echo "$output"
@@ -57,6 +66,7 @@ prql-lib() {
       output=$(echo "$output" | sed -r "s/\<$library_name\>\./$prefix$separator/g")
     fi
   done
+  # FIXME: Test for remaining import statements and report error
   echo "$output"
 }
 
