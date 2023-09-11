@@ -70,14 +70,15 @@ prql-lib() {
   local output="$input"
   local separator="${2:-__}"
   # Define the pattern to match lines
-  local match_pattern="^import[[:space:]]\{1,\}[[:alnum:]_-]\{1,\}[[:space:]]\{0,\}$"
+  local import_pattern="^import[[:space:]]\{1,\}[[:alnum:]_-]\{1,\}[[:space:]]\{0,\}\(as[[:space:]]\{1,\}[[:alnum:]_-]\{1,\}\)\{0,1\}$"
   # Use sed to extract lines matching the pattern and capture the two words following "import"
-  local matches=$(echo "$output" | sed -n "/$match_pattern/p")
+  local matches=$(echo "$output" | sed -n "/$import_pattern/p")
   # Iterate over the matches using a for loop
   IFS=$'\n'  # Set the Internal Field Separator to newline to iterate over lines
   for line in $matches; do
-    if [[ "$line" =~ ^import[[:space:]]+([[:alnum:]_-]+)[[:space:]]* ]]; then
+    if [[ "$line" =~ ^import[[:space:]]+([[:alnum:]_-]+)[[:space:]]*(as)?[[:space:]]*([[:alnum:]_-]+)?[[:space:]]*$ ]]; then
       local library_name="${BASH_REMATCH[1]}"
+      local library_alias="${BASH_REMATCH[3]}"
       local prefix="${3:-$library_name}"
       prql-import "$library_name" "$separator" "$prefix"
       local import_replacement="$PRQL_IMPORT_OUTPUT"
@@ -88,7 +89,7 @@ prql-lib() {
       # Replace the import statement with the code from the module/library
       output=$(echo "$output" | awk -v import_replacement="$import_replacement" '{gsub("'"$line"'", import_replacement)}1')
       # Replace references to the module/library
-      output=$(echo "$output" | sed -r "s/\<$library_name\>\./$prefix$separator/g")
+      output=$(echo "$output" | sed -r "s/\<$library_alias\>\./$prefix$separator/g")
     fi
   done
   # FIXME: Test for remaining import statements and report error
