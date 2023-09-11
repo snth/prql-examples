@@ -8,5 +8,19 @@
 - DONE: exec into final command in case it is long running
 - DONE: Add psql example
 - DONE: Add duckdb
-- Add scrooge
+- DONE: Add sqlite
+- DONE: Add postgres
+- Fix the PRQL_COMFILE_OPTIONS -> `eval`
+- Check other arguments are passed to EXEC_COMMAND -> eg produce parquet with DuckDB
 - execute prql-exec in subshell to not pollute environment
+- Add Github
+- Add aliases e.g. import github as gh
+- Add sqlite-http as http
+- Add scrooge
+- Add motherduck
+- Add ClickHouse
+- Add clickhouse-local
+- Add JSON -> via DuckDB or sqlite
+- Add steampipe
+- Add cloud DWH clients
+- Add YouPlot example
