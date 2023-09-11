@@ -15,6 +15,14 @@ ln -sf "$(pwd)/prql-exec" ~/.local/bin/prql-exec
 export PRQL_LIB_PATH=".:$(pwd)"
 ```
 
+Since without an `import` statement, `prql-exec` will just
+output the SQL produced, I usually just alias it to `prql`
+with:
+
+```sh
+alias prql=prql-exec
+```
+
 ## Example usage
 
 The libraries included by default are:
@@ -22,6 +30,8 @@ The libraries included by default are:
 - [duckdb](duckdb/README.md)
 - [git (mergestat)](git/README.md)
 - [os (osquery)](os/README.md)
+- [postgres](postgres/README.md)
+- [sqlite](sqlite/README.md)
 
 ## Adding libraries
 
