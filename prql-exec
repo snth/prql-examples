@@ -36,11 +36,13 @@ prql-import() {
   local separator="${2:-__}"
   local prefix="${3:-$1}"
   local prql_lib_path="${PRQL_LIB_PATH:-.}"
+  local found=false
   PRQL_LIB_PATH=""
   #echo "Using PRQL_LIB_PATH=$prql_lib_path" >&2
   IFS=":"
   for lib_dir in $prql_lib_path; do
     if ([[ -d "$lib_dir/$1" ]] && [[ -f "$lib_dir/$1/$(capitalize $1).prql" ]]); then
+      # found a library
       pushd "$lib_dir/$1" > /dev/null
       prql-lib "$(capitalize $1).prql" "$separator" "$prefix"
       popd > /dev/null
@@ -53,13 +55,20 @@ prql-import() {
         source "$lib_dir/$1/.env"
 	set +a
       fi
+      found=true
       break
     elif [[ -f "$lib_dir/$1.prql" ]]; then
+      # found a module
       output=$(cat "$lib_dir/$1.prql")
       #echo "Imported $lib_dir/$1.prql" >&2
+      found=true
       break
     fi
   done
+  if [ "$found" = false ]; then
+    echo "ERROR: Could not import $1."
+    return 1
+  fi
   # apply the prefix to all let statements
   output=$(echo "$output" | sed -r "s/^let[ ]+/let $prefix$separator/")
   PRQL_IMPORT_OUTPUT="$output"
@@ -72,27 +81,22 @@ prql-lib() {
   # Define the pattern to match lines
   local import_pattern="^import[[:space:]]\{1,\}[[:alnum:]_-]\{1,\}[[:space:]]\{0,\}\(as[[:space:]]\{1,\}[[:alnum:]_-]\{1,\}\)\{0,1\}$"
   # Use sed to extract lines matching the pattern and capture the two words following "import"
-  local matches=$(echo "$output" | sed -n "/$import_pattern/p")
+  local import_matches=$(echo "$output" | sed -n "/$import_pattern/p")
   # Iterate over the matches using a for loop
   IFS=$'\n'  # Set the Internal Field Separator to newline to iterate over lines
-  for line in $matches; do
+  for line in $import_matches; do
     if [[ "$line" =~ ^import[[:space:]]+([[:alnum:]_-]+)[[:space:]]*(as)?[[:space:]]*([[:alnum:]_-]+)?[[:space:]]*$ ]]; then
       local library_name="${BASH_REMATCH[1]}"
       local library_alias="${BASH_REMATCH[3]}"
       local prefix="${3:-$library_name}"
       prql-import "$library_name" "$separator" "$prefix"
       local import_replacement="$PRQL_IMPORT_OUTPUT"
-      if [[ $? -ne 0 ]]; then
-	echo "ERROR: $import_replacement"
-        return 1
-      fi
       # Replace the import statement with the code from the module/library
       output=$(echo "$output" | awk -v import_replacement="$import_replacement" '{gsub("'"$line"'", import_replacement)}1')
       # Replace references to the module/library
       output=$(echo "$output" | sed -r "s/\<$library_alias\>\./$prefix$separator/g")
     fi
   done
-  # FIXME: Test for remaining import statements and report error
   PRQL_LIB_OUTPUT="$output"
 }
 

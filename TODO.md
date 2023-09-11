@@ -14,7 +14,7 @@
 - DONE: ECheck other arguments are passed to EXEC_COMMAND -> eg produce parquet with DuckDB
 - DONE: Switch to one of the stricter modes like set -eu
 - DONE: Add aliases e.g. import github as gh
-- Test for unhandled imports and report an error
+- DONE: Test for unhandled imports and report an error
 - Fix nested imports and add module imports
 - execute prql-exec in subshell to not pollute environment
 - Add parameter parsing (before -- to prqlc and after to PRQL_EXEC_COMMAND)
