@@ -53,13 +53,9 @@ prql-import() {
       # Also source .env file if present for prql-exec
       if [ -f "$lib_dir/$1/.env" ]; then
         #cat "$lib_dir/$1/.env" >&2
+	set -a
         source "$lib_dir/$1/.env"
-	if [ -n "PRQL_EXEC_COMMAND" ]; then
-	  export PRQL_EXEC_COMMAND="$PRQL_EXEC_COMMAND"
-	fi
-	if [ -n "PRQL_COMPILE_OPTIONS" ]; then
-	  export PRQL_COMPILE_OPTIONS="$PRQL_COMPILE_OPTIONS"
-	fi
+	set +a
       fi
       break
     elif [[ -f "$lib_dir/$1.prql" ]]; then
@@ -78,13 +74,13 @@ prql-lib() {
   local output="$input"
   local separator="${2:-__}"
   # Define the pattern to match lines
-  local match_pattern="^import[[:space:]]\{1,\}[[:alnum:]]\{1,\}[[:space:]]\{0,\}$"
+  local match_pattern="^import[[:space:]]\{1,\}[[:alnum:]_-]\{1,\}[[:space:]]\{0,\}$"
   # Use sed to extract lines matching the pattern and capture the two words following "import"
   local matches=$(echo "$output" | sed -n "/$match_pattern/p")
   # Iterate over the matches using a for loop
   IFS=$'\n'  # Set the Internal Field Separator to newline to iterate over lines
   for line in $matches; do
-    if [[ "$line" =~ ^import[[:space:]]+([[:alnum:]]+)[[:space:]]* ]]; then
+    if [[ "$line" =~ ^import[[:space:]]+([[:alnum:]_-]+)[[:space:]]* ]]; then
       local library_name="${BASH_REMATCH[1]}"
       local prefix="${3:-$library_name}"
       prql-import "$library_name" "$separator" "$prefix"

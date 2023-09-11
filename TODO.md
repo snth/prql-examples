@@ -12,9 +12,10 @@
 - DONE: Add postgres
 - Fix the PRQL_COMFILE_OPTIONS -> `eval`
 - Check other arguments are passed to EXEC_COMMAND -> eg produce parquet with DuckDB
+- Add aliases e.g. import github as gh
+- Fix nested imports and add module imports
 - execute prql-exec in subshell to not pollute environment
 - Add Github
-- Add aliases e.g. import github as gh
 - Add sqlite-http as http
 - Add scrooge
 - Add motherduck
