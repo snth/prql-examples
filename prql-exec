@@ -1,10 +1,12 @@
 #!/bin/bash
 
+# FIXME: Since this is now running in a script we don't need this anymore
 prql-init() {
   ORIGINAL_PRQL_COMPILE_OPTIONS="$PRQL_COMPILE_OPTIONS"
   ORIGINAL_PRQL_EXEC_COMMAND="$PRQL_EXEC_COMMAND"
 }
 
+# FIXME: Since this is now running in a script we don't need this anymore
 prql-cleanup() {
   PRQL_COMPILE_OPTIONS="$ORIGINAL_PRQL_COMPILE_OPTIONS"
   unset ORIGINAL_PRQL_COMPILE_OPTIONS
@@ -14,13 +16,13 @@ prql-cleanup() {
 
 prql-compile() { 
   IFS=" "
-  query="$1"
-  options="${@:2}"
+  local query="$1"
+  local options="${@:2}"
   if [ -n "$PRQL_COMPILE_OPTIONS" ]; then
     #echo "Using PRQL_COMPILE_OPTIONS=$PRQL_COMPILE_OPTIONS" >&2
     options="${options[@]} ${PRQL_COMPILE_OPTIONS}"
   fi
-  PRQL_COMPILE_OUTPUT="$( echo "$query" | prqlc compile - - )"
+  PRQL_COMPILE_OUTPUT="$( echo "$query" | eval "prqlc compile - - $options" )"
   if [[ $? -ne 0 ]]; then
     echo -e "\n# QUERY\n\n$query\n\n"
     return 1
@@ -102,28 +104,27 @@ prql-lib() {
 prql-exec-fn() {
   # Looks for PRQL_EXEC_COMMAND and passes output to that if present
   prql-init
-  input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
-  destinaton="${2:--}"
-  options="${@:3}"
+  local input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
+  local destinaton="${2:--}"
+  local options="${@:3}"
   prql-lib "$input"
-  query="$PRQL_LIB_OUTPUT"
-  prql-compile "$query" "$destination" "$options"
+  local query="$PRQL_LIB_OUTPUT"
+  prql-compile "$query" "$destination"
   if [[ $? -ne 0 ]]; then
     prql-cleanup
     return $?
   fi
-  sql="$PRQL_COMPILE_OUTPUT"
+  local sql="$PRQL_COMPILE_OUTPUT"
   #echo "$( env | grep PRQL_ )" >&2
   if [ -n "$PRQL_EXEC_COMMAND" ]; then
-    #echo "Using PRQL_EXEC_COMMAND=$PRQL_EXEC_COMMAND" >&2
-    echo -e "$sql\n;" | eval $PRQL_EXEC_COMMAND
+    #echo "Using PRQL_EXEC_COMMAND=$PRQL_EXEC_COMMAND $options" >&2
+    echo -e "$sql\n;" | eval "$PRQL_EXEC_COMMAND $options"
   else
     # When no PRQL_EXEC_COMMAND is given we behave just like
     # prqlc compile and echo the SQL.
-    #echo "ERROR: No PRQL_EXEC_COMMAND found!"
-    prql-cleanup
     echo $sql
   fi
+  prql-cleanup
 }
 
 input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
