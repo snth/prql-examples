@@ -12,7 +12,7 @@
 - DONE: Add postgres
 - DONE: Fix the PRQL_COMFILE_OPTIONS -> `eval`
 - DONE: ECheck other arguments are passed to EXEC_COMMAND -> eg produce parquet with DuckDB
-- Switch to one of the stricter modes like set -x
+- DONE: Switch to one of the stricter modes like set -eu
 - Add aliases e.g. import github as gh
 - Fix nested imports and add module imports
 - execute prql-exec in subshell to not pollute environment

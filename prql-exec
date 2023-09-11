@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-## use errexit
-#set -e
+# use errexit
+set -eu
 
 cleanup() {
     echo "Goodbye!"
@@ -12,7 +12,7 @@ prql-compile() {
   IFS=" "
   local query="$1"
   local options="${@:2}"
-  if [ -n "$PRQL_COMPILE_OPTIONS" ]; then
+  if [ -n "${PRQL_COMPILE_OPTIONS:-}" ]; then
     #echo "Using PRQL_COMPILE_OPTIONS=$PRQL_COMPILE_OPTIONS" >&2
     options="${options[@]} ${PRQL_COMPILE_OPTIONS}"
   fi
@@ -98,17 +98,16 @@ prql-lib() {
 prql-exec-fn() {
   # Looks for PRQL_EXEC_COMMAND and passes output to that if present
   local input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
-  local destinaton="${2:--}"
-  local options="${@:3}"
+  local options="${@:2}"
   prql-lib "$input"
   local query="$PRQL_LIB_OUTPUT"
-  prql-compile "$query" "$destination"
+  prql-compile "$query"
   if [[ $? -ne 0 ]]; then
     return $?
   fi
   local sql="$PRQL_COMPILE_OUTPUT"
   #echo "$( env | grep PRQL_ )" >&2
-  if [ -n "$PRQL_EXEC_COMMAND" ]; then
+  if [ -n "${PRQL_EXEC_COMMAND:-}" ]; then
     #echo "Using PRQL_EXEC_COMMAND=$PRQL_EXEC_COMMAND $options" >&2
     echo -e "$sql\n;" | eval "$PRQL_EXEC_COMMAND $options"
   else
@@ -118,5 +117,5 @@ prql-exec-fn() {
   fi
 }
 
-input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
+input=$( ([ $# -eq 0 ] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
 prql-exec-fn "$input" "${@:2}"
