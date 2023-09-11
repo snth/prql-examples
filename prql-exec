@@ -1,18 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# FIXME: Since this is now running in a script we don't need this anymore
-prql-init() {
-  ORIGINAL_PRQL_COMPILE_OPTIONS="$PRQL_COMPILE_OPTIONS"
-  ORIGINAL_PRQL_EXEC_COMMAND="$PRQL_EXEC_COMMAND"
-}
+## use errexit
+#set -e
 
-# FIXME: Since this is now running in a script we don't need this anymore
-prql-cleanup() {
-  PRQL_COMPILE_OPTIONS="$ORIGINAL_PRQL_COMPILE_OPTIONS"
-  unset ORIGINAL_PRQL_COMPILE_OPTIONS
-  PRQL_EXEC_COMMAND="$ORIGINAL_PRQL_EXEC_COMMAND"
-  unset ORIGINAL_PRQL_EXEC_COMMAND
+cleanup() {
+    echo "Goodbye!"
 }
+trap cleanup EXIT
 
 prql-compile() { 
   IFS=" "
@@ -103,7 +97,6 @@ prql-lib() {
 
 prql-exec-fn() {
   # Looks for PRQL_EXEC_COMMAND and passes output to that if present
-  prql-init
   local input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
   local destinaton="${2:--}"
   local options="${@:3}"
@@ -111,7 +104,6 @@ prql-exec-fn() {
   local query="$PRQL_LIB_OUTPUT"
   prql-compile "$query" "$destination"
   if [[ $? -ne 0 ]]; then
-    prql-cleanup
     return $?
   fi
   local sql="$PRQL_COMPILE_OUTPUT"
@@ -124,7 +116,6 @@ prql-exec-fn() {
     # prqlc compile and echo the SQL.
     echo $sql
   fi
-  prql-cleanup
 }
 
 input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
