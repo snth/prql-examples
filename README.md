@@ -55,6 +55,7 @@ PGPORT=5432
 PGDATABASE=postgres
 PGUSER=postgres
 PGPASSWORD=postgres
+PRQL_COMPILE_OPTIONS="--target=sql.postgres --hide-signature-comment"
 PRQL_EXEC_COMMAND=psql
 ```
 
