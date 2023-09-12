@@ -2,15 +2,37 @@
 
 # Defines tables with less columns that display better in the terminal
 
-let commits = (
-  from commits
+let commits = repo:'' rev:'HEAD' -> (
+  from s"""SELECT * from commits({repo}, {rev})"""
+)
+
+let commits_pretty = rel -> (
+  rel
   select {hash, message, author_name, author_email, parents}
 )
 
-let refs = (from refs)
+let refs = repo:'' -> (
+  from s"""SELECT * from refs({repo})"""
+)
 
-let stats = (from stats)
+let stats = repo:'' rev:'HEAD' to_rev:'' -> (
+  from s"""SELECT * from stats({repo}, {rev}, {to_rev})"""
+)
 
-let files = (from files)
+let files = repo:'' rev:'HEAD' -> (
+  from s"""SELECT * from files({repo}, {rev})"""
+)
 
-let blame = (from blame)
+let files_pretty = rel -> (
+  rel
+  select {path, executable}
+)
+
+let blame = repo:'' rev:'HEAD' path:'' -> (
+  from s"""SELECT * from blame({repo}, {rev}, {path})"""
+)
+
+let blame_pretty = rel -> (
+  rel
+  select {line_no, message, author_name, author_when}
+)
