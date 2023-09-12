@@ -3,11 +3,6 @@
 # use errexit
 set -eu
 
-cleanup() {
-    echo "Goodbye!"
-}
-trap cleanup EXIT
-
 prql-compile() { 
   IFS=" "
   local query="$1"
@@ -113,20 +108,13 @@ prql-lib() {
 }
 
 prql-exec-fn() {
-  # Looks for PRQL_EXEC_COMMAND and passes output to that if present
-  local input=$( ([[ -z "$1" ]] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
-  local options="${@:2}"
+  # These variables are not local so that we can display them in the error handler.
+  input="$1"
+  options="${@:2}"
   prql-lib "$input"
-  local query="$PRQL_LIB_OUTPUT"
-  # DEBUG: uncomment the following query echo
-  #echo -e "$query"
+  query="$PRQL_LIB_OUTPUT"
   prql-compile "$query"
-  if [[ $? -ne 0 ]]; then
-    echo -e "ERROR: Could not compile query:\n$query"
-    return $?
-  fi
-  local sql="$PRQL_COMPILE_OUTPUT"
-  #echo "$( env | grep PRQL_ )" >&2
+  sql="$PRQL_COMPILE_OUTPUT"
   if [ -n "${PRQL_EXEC_COMMAND:-}" ]; then
     #echo "Using PRQL_EXEC_COMMAND=$PRQL_EXEC_COMMAND $options" >&2
     echo -e "$sql\n;" | eval "$PRQL_EXEC_COMMAND $options"
@@ -137,5 +125,17 @@ prql-exec-fn() {
   fi
 }
 
+# Add error handling
+show_query() {
+    echo -e "ERROR: Could not compile query:\n$query"
+}
+trap show_query EXIT
+
+# Standardise input
 input=$( ([ $# -eq 0 ] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
+
+# Process the input
 prql-exec-fn "$input" "${@:2}"
+
+# If we got here we succeeded so untrap the exit error handler
+trap - EXIT

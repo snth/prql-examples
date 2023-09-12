@@ -1,6 +1,11 @@
 # Requires mergestat
 
-let commits = (from commits)
+# Defines tables with less columns that display better in the terminal
+
+let commits = (
+  from commits
+  select {hash, message, author_name, author_email, parents}
+)
 
 let refs = (from refs)
 
