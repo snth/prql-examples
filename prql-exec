@@ -121,13 +121,13 @@ prql-exec-fn() {
   sql="$PRQL_COMPILE_OUTPUT"
 
   # Determine command options
-  # This can only be don: after prql-lib because that loads the PRQL_EXEC_OPTIONS
-  options="${user_options:-$PRQL_EXEC_OPTIONS}"
+  # This can only be done after prql-lib because that loads the PRQL_EXEC_OPTIONS
+  default_options="${PRQL_EXEC_OPTIONS:-}"
+  PRQL_EXEC_OPTIONS="${user_options:-$default_options}"
 
   # Execute the command
   if [ -n "${PRQL_EXEC_COMMAND:-}" ]; then
-    cmd="$PRQL_EXEC_COMMAND $options \"$sql\""
-    eval "$cmd"
+    eval "$PRQL_EXEC_COMMAND"
   else
     # When no PRQL_EXEC_COMMAND is given we behave just like
     # prqlc compile and echo the SQL.
@@ -141,7 +141,7 @@ error_handler() {
     echo -e "\ninput=$input" >&2
     echo -e "\nquery=${query:-NOT GENERATED}" >&2
     echo -e "\nsql=${sql:-NOT GENERATED}" >&2
-    echo -e "\ncmd=${cmd:-NOT GENERATED}" >&2
+    echo -e "\nPRQL_EXEC_COMMAND=${PRQL_EXEC_COMMAND:-NOT GENERATED}" >&2
 }
 trap error_handler EXIT
 

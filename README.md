@@ -37,20 +37,30 @@ The libraries included by default are:
 
 Libraries can be added by creating a <library>/ directory
 with a <Library.prql> file in it. This can then be used
-in PRQL queries with the `import <library>` command.
+in PRQL queries with the `import <library>` statement.
 
 Moreover, if there is a `.env` file in the <library>/
 directory, it will be "sourced" and if there is a
 `PRQL_EXEC_COMMAND` environment variable defined in that
-file, then the generated SQL will be piped to that command.
+file, then that command will be executed via `eval`.
+The generated SQL will be passed to it via a `"$sql"`
+argument. Options that can be overridden by the user
+at runtime should be defined in `PRQL_EXEC_OPTIONS`.
+Options that should never be overriden can simple
+be included in the COMMAND.
 
-The `PRQL_EXEC_COMMAND` needs to accept SQL being piped to
-it on stdin. For executables that expect SQL as a different
-argument, this can usually easily be achieved by using
-`"$(cat)"` as a parameter, see for example:
+The general form of the command definition 
+should be something like:
+
+Please note that the quotes around `$sql` and the lack
+of quotes around `$PRQL_EXEC_OPTIONS` are important!
+
+For executables that expect to receive SQL via STDIN,
+this can usually easily be achieved by using a command
+definition as follows:
 
 ```sh
-PRQL_EXEC_COMMAND='osqueryi "$(cat)"'
+PRQL_EXEC_COMMAND='echo "$sql" | <COMMAND> $PRQL_EXEC_OPTIONS'
 ```
 
 ## Adding private libraries
