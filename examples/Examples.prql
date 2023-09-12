@@ -1,3 +1,4 @@
+import git
 
 let last_commits = n:5 -> (
   from git.commits

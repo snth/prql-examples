@@ -16,6 +16,8 @@
 - DONE: Add aliases e.g. import github as gh
 - DONE: Test for unhandled imports and report an error
 - DONE: Fix nested imports and add module imports
+- DONE: Differentiate between global and local . imports.
+- DONE: Change namespace prefixes to use aliases to avoid collisions between equal names
 - execute prql-exec in subshell to not pollute environment
 - Add parameter parsing (before -- to prqlc and after to PRQL_EXEC_COMMAND)
 - Add Github

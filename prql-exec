@@ -36,15 +36,16 @@ prql-import() {
   local output=""
   local prql_lib_path="${2:-$PRQL_LIB_PATH}"
   local separator="${3:-__}"
+  local import_alias="${4:-}"
+  local prefix="${5:-}"
   local found=false
-  PRQL_LIB_PATH=""
   #echo "Using PRQL_LIB_PATH=$prql_lib_path" >&2
   IFS=":"
   for lib_dir in $prql_lib_path; do
     if ([[ -d "$lib_dir/$import_name" ]] && [[ -f "$lib_dir/$import_name/$(capitalize $import_name).prql" ]]); then
       # found a library
       pushd "$lib_dir/$import_name" > /dev/null
-      prql-lib "$(cat "$(capitalize $import_name).prql")" "." "$separator"
+      prql-lib "$(cat "$(capitalize $import_name).prql")" "." "$separator" "$import_alias" "$prefix$import_alias$separator"
       popd > /dev/null
       output="$PRQL_LIB_OUTPUT"
       #echo "Imported $lib_dir/$import_name/$(capitalize $import_name).prql" >&2
@@ -69,8 +70,9 @@ prql-import() {
     echo "ERROR: Could not import $import_name."
     return 1
   fi
-  # apply the prefix to all let statements
-  output=$(echo "$output" | sed -r "s/^[[:space:]]*let[[:space:]]+/let $import_name$separator/")
+  # For let statements, we prefix them with the current module name which is enough
+  # as this will be repeated as the code is passed up the stack.
+  output=$(echo "$output" | sed -r "s/^([[:space:]]*)let[[:space:]]+/\1let $import_alias$separator/g")
   PRQL_IMPORT_OUTPUT="$output"
 }
 
@@ -78,28 +80,33 @@ prql-lib() {
   # Looks for import statements in the current input and then calls prql-import for those.
   local input="$1"
   local output="$input"
-  local prql_lib_path="${2:-$PRQL_LIB_PATH}"
   local separator="${3:-__}"
+  local prefix="${5:-}"
   # Define the pattern to match lines
-  local import_pattern="^import[[:space:]]\{1,\}[[:alnum:]_-]\{1,\}[[:space:]]\{0,\}\(as[[:space:]]\{1,\}[[:alnum:]_-]\{1,\}\)\{0,1\}$"
+  local import_pattern="^import[[:space:]]\{1,\}\.\{0,1\}[[:alnum:]_-]\{1,\}[[:space:]]\{0,\}\(as[[:space:]]\{1,\}[[:alnum:]_-]\{1,\}\)\{0,1\}$"
   # Use sed to extract lines matching the pattern and capture the two words following "import"
   local import_matches=$(echo "$output" | sed -n "/$import_pattern/p")
   # Iterate over the matches using a for loop
   IFS=$'\n'  # Set the Internal Field Separator to newline to iterate over lines
   local line
   for line in $import_matches; do
-    if [[ "$line" =~ ^import[[:space:]]+([[:alnum:]_-]+)[[:space:]]*(as)?[[:space:]]*([[:alnum:]_-]+)?[[:space:]]*$ ]]; then
-      local import_name="${BASH_REMATCH[1]}"
-      local import_alias="${BASH_REMATCH[3]:-$import_name}"
-      prql-import "$import_name" "$prql_lib_path" "$separator"
+    if [[ "$line" =~ ^import[[:space:]]+(\.)?([[:alnum:]_-]+)[[:space:]]*(as)?[[:space:]]*([[:alnum:]_-]+)?[[:space:]]*$ ]]; then
+      local prql_lib_path="${BASH_REMATCH[1]}"
+      if [[ "$prql_lib_path" == "" ]]; then
+        prql_lib_path="$PRQL_LIB_PATH"
+      fi
+      local import_name="${BASH_REMATCH[2]}"
+      local import_alias="${BASH_REMATCH[4]:-$import_name}"
+      prql-import "$import_name" "$prql_lib_path" "$separator" "$import_alias"
       local import_replacement="$PRQL_IMPORT_OUTPUT"
       # Replace the import statement with the code from the module/library
       output=$(echo "$output" | awk -v import_replacement="$import_replacement" '{gsub("'"$line"'", import_replacement)}1')
-      # Replace references to the module/library
+      # For references to the current module/library, we have to prefix with the
+      # full prefix up to this point in order to avoid name collisions.
+      # This will only be done once so we have to apply the full prefix.
       # This is pretty hacky and unsafe so users should try to avoid name collisions.
-      # Replace tne references
-      # FIXME: these actually need to be captured and passed down the stack
-      output=$(echo "$output" | sed -r "s/([[:space:].]|\b)$import_alias\./\1$import_name$separator/g")
+      # FIXME: do we need the :space: here or is \b enough?
+      output=$(echo "$output" | sed -r "s/([[:space:].]|\b)$import_alias\./\1$prefix$import_alias$separator/g")
     fi
   done
   PRQL_LIB_OUTPUT="$output"
@@ -111,6 +118,7 @@ prql-exec-fn() {
   local options="${@:2}"
   prql-lib "$input"
   local query="$PRQL_LIB_OUTPUT"
+  # DEBUG: uncomment the following query echo
   #echo -e "$query"
   prql-compile "$query"
   if [[ $? -ne 0 ]]; then
