@@ -110,14 +110,24 @@ prql-lib() {
 prql-exec-fn() {
   # These variables are not local so that we can display them in the error handler.
   input="$1"
-  options="${@:2}"
+  user_options="${@:2}"			# Override options take preference
+
+  # Process the imports
   prql-lib "$input"
   query="$PRQL_LIB_OUTPUT"
+
+  # Compile to SQL
   prql-compile "$query"
   sql="$PRQL_COMPILE_OUTPUT"
+
+  # Determine command options
+  # This can only be don: after prql-lib because that loads the PRQL_EXEC_OPTIONS
+  options="${user_options:-$PRQL_EXEC_OPTIONS}"
+
+  # Execute the command
   if [ -n "${PRQL_EXEC_COMMAND:-}" ]; then
-    #echo "Using PRQL_EXEC_COMMAND=$PRQL_EXEC_COMMAND $options" >&2
-    echo -e "$sql\n;" | eval "$PRQL_EXEC_COMMAND $options"
+    cmd="$PRQL_EXEC_COMMAND $options \"$sql\""
+    eval "$cmd"
   else
     # When no PRQL_EXEC_COMMAND is given we behave just like
     # prqlc compile and echo the SQL.
@@ -126,10 +136,14 @@ prql-exec-fn() {
 }
 
 # Add error handling
-show_query() {
-    echo -e "ERROR: Could not compile query:\n$query"
+error_handler() {
+    echo -e "\nERROR:" >&2
+    echo -e "\ninput=$input" >&2
+    echo -e "\nquery=${query:-NOT GENERATED}" >&2
+    echo -e "\nsql=${sql:-NOT GENERATED}" >&2
+    echo -e "\ncmd=${cmd:-NOT GENERATED}" >&2
 }
-trap show_query EXIT
+trap error_handler EXIT
 
 # Standardise input
 input=$( ([ $# -eq 0 ] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
