@@ -1,0 +1,14 @@
+# from functions
+
+let from_csv = path:'/dev/stdin' -> (
+  from s"""SELECT * FROM read_csv_auto({path})"""
+)
+
+let from_json = path:'/dev/stdin' -> (
+  from s"""SELECT * FROM read_json_auto({path})"""
+)
+
+let from_parquet = path:'/dev/stdin' -> (
+  from s"""SELECT * FROM read_parquet({path})"""
+)
+
