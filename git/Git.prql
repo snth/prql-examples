@@ -36,3 +36,12 @@ let blame_pretty = rel -> (
   rel
   select {line_no, message, author_name, author_when}
 )
+
+let top_committers = n:10 -> (
+  from commits
+  group {author_name} (
+    aggregate {num_commits = count this}
+  )
+  sort {-num_commits}
+  take n
+)
