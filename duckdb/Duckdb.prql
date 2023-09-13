@@ -1,9 +1,47 @@
+# from functions
 
-let from_csv = filename:'/dev/stdin' -> (
-  from s"""SELECT * FROM read_csv_auto({filename})"""
+let from_csv = path:'/dev/stdin' -> (
+  from s"""SELECT * FROM read_csv_auto({path})"""
 )
 
-let to_csv = filename:'/dev/stdout' rel -> (
+let from_json = path:'/dev/stdin' -> (
+  from s"""SELECT * FROM read_json_auto({path})"""
+)
+
+let from_parquet = path:'/dev/stdin' -> (
+  from s"""SELECT * FROM read_parquet({path})"""
+)
+
+# to functions
+
+let breakout = sql -> (
+  # Generic SQL-injection function to send arbitrary commands
+  s"""SELECT '' AS status WHERE false=true) SELECT * FROM table_0;{sql}; WITH table_0 AS (SELECT '' as status WHERE false=true"""
+)
+
+# FIXME: This currently doesn't work because of the lacking name resolver
+#let to_json = path:'/dev/stdout' rel -> (
+#  d__breakout s"""COPY ({rel}) to {path} (FORMAT JSON)"""
+#)
+
+# Until the resolver is implemented we have repeat the following code
+
+let to_csv_verbose = path:'/dev/stdout' delimiter:',' rel -> (
   # Use SQL-injection to access the DuckDB COPY command
-  s"""SELECT 'Writing to '{filename}' ...' AS status) SELECT * FROM table_0;COPY ({rel}) TO {filename} (FORMAT CSV); WITH table_0 AS (SELECT 'Completed '{filename}'.    ' as status"""
+  s"""SELECT 'Writing to '{path}' ...' AS status) SELECT * FROM table_0;COPY ({rel}) TO {path} (FORMAT CSV, HEADER, DELIMITER {delimiter}); WITH table_0 AS (SELECT 'Completed '{path}'.    ' as status"""
+)
+
+let to_csv = path:'/dev/stdout' delimiter:',' rel -> (
+  # Use SQL-injection to access the DuckDB COPY command
+  s"""SELECT '' WHERE false=true) SELECT * FROM table_0;COPY ({rel}) TO {path} (FORMAT CSV, HEADER, DELIMITER {delimiter}); WITH table_0 AS (SELECT '' WHERE false=true"""
+)
+
+let to_json = path:'/dev/stdout' rel -> (
+  # Use SQL-injection to access the DuckDB COPY command
+  s"""SELECT '' WHERE false=true) SELECT * FROM table_0;COPY ({rel}) TO {path} (FORMAT JSON); WITH table_0 AS (SELECT '' WHERE false=true"""
+)
+
+let to_parquet = path:'/dev/stdout'  rel -> (
+  # Use SQL-injection to access the DuckDB COPY command
+  s"""SELECT '' WHERE false=true) SELECT * FROM table_0;COPY ({rel}) TO {path} (FORMAT PARQUET); WITH table_0 AS (SELECT '' WHERE false=true"""
 )

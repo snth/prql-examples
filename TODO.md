@@ -19,9 +19,14 @@
 - DONE: Differentiate between global and local . imports.
 - DONE: Change namespace prefixes to use aliases to avoid collisions between equal names
 - DONE: Add data piping
+-  Add uplot
+- Add metadata frontmatter at the front of documents
+- Add splitting of source doc by ---
 - Add resolving of nested names
 - Add parameter parsing (before -- to prqlc and after to PRQL_EXEC_COMMAND)
 - Add Github
+- Add sh module
+- Make self-hosted
 - Add sqlite-http as http
 - Add scrooge
 - Add motherduck
