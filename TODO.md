@@ -21,9 +21,9 @@
 - DONE: Add data piping
 - DONE: Add uplot
 - DONE: Add JSON functions
+- DONE: Add "import as ''" for importing into global namespace
 - Add metadata frontmatter at the front of documents
 - Add splitting of source doc by ---
-- Add "import as ''" for importing into global namespace
 - Add resolving of nested names
 - Add parameter parsing (before -- to prqlc and after to PRQL_EXEC_COMMAND)
 - Add Github
