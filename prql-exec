@@ -33,6 +33,10 @@ prql-import() {
   local separator="${3:-__}"
   local import_alias="${4:-}"
   local prefix="${5:-}"
+  if [ "$import_alias" == "" ]; then
+    # When there is no $import_alias then treat them as global imports.
+    separator=""
+  fi
   local found=false
   #echo "Using PRQL_LIB_PATH=$prql_lib_path" >&2
   IFS=":"
@@ -78,7 +82,7 @@ prql-lib() {
   local separator="${3:-__}"
   local prefix="${5:-}"
   # Define the pattern to match lines
-  local import_pattern="^import[[:space:]]\{1,\}\.\{0,1\}[[:alnum:]_-]\{1,\}[[:space:]]\{0,\}\(as[[:space:]]\{1,\}[[:alnum:]_-]\{1,\}\)\{0,1\}$"
+  local import_pattern="^import[[:space:]]\{1,\}\.\{0,1\}[[:alnum:]_-]\{1,\}[[:space:]]\{0,\}\(as[[:space:]]\{1,\}[[:alnum:]_-]\{0,\}\)\{0,1\}$"
   # Use sed to extract lines matching the pattern and capture the two words following "import"
   local import_matches=$(echo "$output" | sed -n "/$import_pattern/p")
   # Iterate over the matches using a for loop
@@ -91,7 +95,16 @@ prql-lib() {
         prql_lib_path="$PRQL_LIB_PATH"
       fi
       local import_name="${BASH_REMATCH[2]}"
-      local import_alias="${BASH_REMATCH[4]:-$import_name}"
+      local import_as="${BASH_REMATCH[3]}"
+      if [ "$import_as" == "as" ]; then
+	# When there is an "as" present we use the match as found.
+	# In particular, an empty inport_alias signifies importing
+	# things into the global namespace.
+	local import_alias="${BASH_REMATCH[4]}"
+      else
+        # Without an "as" we use the $import_name as the alias.
+	local import_alias="$import_name"
+      fi
       prql-import "$import_name" "$prql_lib_path" "$separator" "$import_alias"
       local import_replacement="$PRQL_IMPORT_OUTPUT"
       # Replace the import statement with the code from the module/library
