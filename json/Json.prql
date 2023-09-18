@@ -1,0 +1,6 @@
+
+let get = path obj -> s"""{obj} -> {path}"""
+
+let getstr = path obj -> s"""{obj} ->> {path}"""
+
+let extract = obj path -> s"""json_extract({obj}, {path})"""
