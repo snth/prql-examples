@@ -19,7 +19,7 @@
 - DONE: Differentiate between global and local . imports.
 - DONE: Change namespace prefixes to use aliases to avoid collisions between equal names
 - DONE: Add data piping
--  Add uplot
+- DONE: Add uplot
 - Add metadata frontmatter at the front of documents
 - Add splitting of source doc by ---
 - Add resolving of nested names
