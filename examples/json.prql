@@ -1,0 +1,4 @@
+import json as 
+
+from [{data='{"duck": [1, 2, 3]}'}]
+select {data | get '$.duck[0]', data | getstr '$.duck[1]', extract data '$.duck[2]'}
