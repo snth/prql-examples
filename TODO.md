@@ -22,19 +22,17 @@
 - DONE: Add uplot
 - DONE: Add JSON functions
 - DONE: Add "import as ''" for importing into global namespace
+- Add steampipe
 - Add metadata frontmatter at the front of documents
 - Add splitting of source doc by ---
 - Add resolving of nested names
 - Add parameter parsing (before -- to prqlc and after to PRQL_EXEC_COMMAND)
 - Add Github
-- Add sh module
-- Make self-hosted
 - Add sqlite-http as http
 - Add scrooge
 - Add motherduck
 - Add ClickHouse
 - Add clickhouse-local
-- Add JSON -> via DuckDB or sqlite
-- Add steampipe
 - Add cloud DWH clients
-- Add YouPlot example
+- Add sh module
+- Make self-hosted
