@@ -1,8 +1,0 @@
-import git
-
-let last_commits = n:5 -> (
-  from git.commits
-  select {hash, message, author_name, author_email, parents}
-  take n
-)
-
