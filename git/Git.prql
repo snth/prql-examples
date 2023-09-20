@@ -8,7 +8,7 @@ let commits = repo:'' rev:'HEAD' -> (
 
 let commits_pretty = rel -> (
   rel
-  select {hash, message, author_name, author_email, parents}
+  select {author_when, author_name, message, hash, parents}
 )
 
 let refs = repo:'' -> (
@@ -37,11 +37,18 @@ let blame_pretty = rel -> (
   select {line_no, message, author_name, author_when}
 )
 
-let top_committers = n:10 -> (
+let top_authors = -> (
   from commits
   group {author_name} (
-    aggregate {num_commits = count this}
+    aggregate {commits = count this}
   )
-  sort {-num_commits}
-  take n
+  sort {-commits}
+)
+
+let top_committers = -> (
+  from commits
+  group {committer_name} (
+    aggregate {commits = count this}
+  )
+  sort {-commits}
 )
