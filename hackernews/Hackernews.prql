@@ -14,3 +14,41 @@ let top_comments = (
   select {score, comments=descendants ?? 0, title, url, id}
   sort {-comments}
 )
+
+let ask_hn = (
+  from hackernews_ask_hn
+)
+
+let best = (
+  from hackernews_best
+)
+
+let item = (
+  from hackernews_item
+)
+
+let job = (
+  from hackernews_job
+  select {score, comments=descendants ?? 0, title, url, id}
+)
+
+let new = (
+  from hackernews_new
+  select {score, comments=descendants ?? 0, title, url, id}
+)
+
+let show_hn = (
+  from hackernews_show_hn
+  select {score, comments=descendants ?? 0, title, url, id}
+)
+
+let user = (
+  from hackernews_user
+  select {id, karma, created, about}
+)
+
+let user_submitted = userid -> (
+  from hackernews_user
+  filter id==userid
+  select {user=id, submitted=s"""jsonb_array_elements(submitted)"""}
+)
