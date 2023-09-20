@@ -1,0 +1,5 @@
+
+let registry_plugin = (
+  from steampipe_registry_plugin
+)
+

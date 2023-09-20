@@ -47,5 +47,8 @@ steampipe plugin install steampipe
 
 Run your first query:
 ```sh
-steampipe query "select name from steampipe_registry_plugin;"
+prql-exec <<eof
+import steampipe as sp
+from sp.registry_plugin
+select {name}
 ```
