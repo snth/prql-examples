@@ -1,0 +1,26 @@
+
+let quote = (
+  from finance_quote
+)
+
+let quote_daily = (
+  from finance_quote_daily
+  select {this.timestamp, symbol, open, high, low, close, adjusted_close, volume}
+  sort {-this.timestamp}
+)
+
+let quote_hourly = (
+  from finance_quote_hourly
+  select {this.timestamp, symbol, open, high, low, close, adjusted_close, volume}
+)
+
+# Filer details from the US Securities and Exchange Commission (SEC) Edgar database.
+let us_sec_filer = (
+  from finance_us_sec_filer
+)
+
+# Doesn't seem to work on the steampipe side
+let us_sec_public_company = (
+  from finance_us_sec_public_company
+)
+
