@@ -1,11 +1,16 @@
 
-let top_full = (
+let top = (
   from hackernews_top
+)
+
+let top_score = (
+  from hackernews_top
+  select {score, comments=descendants ?? 0, title, url, id}
   sort {-score}
 )
 
-let top = (
+let top_comments = (
   from hackernews_top
-  sort {-score}
-  select {score, title, url, by, id}
+  select {score, comments=descendants ?? 0, title, url, id}
+  sort {-comments}
 )
