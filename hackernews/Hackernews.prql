@@ -1,0 +1,11 @@
+
+let top_full = (
+  from hackernews_top
+  sort {-score}
+)
+
+let top = (
+  from hackernews_top
+  sort {-score}
+  select {score, title, url, by, id}
+)
