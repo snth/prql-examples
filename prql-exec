@@ -124,6 +124,13 @@ prql-exec-fn() {
   # These variables are not local so that we can display them in the error handler.
   input="$1"
   user_options="${@:2}"			# Override options take preference
+  # Reset the other global variables
+  # Note: we can't make these local because we want the error handler to have access to them.
+  unset query
+  unset sql
+  unset default_options
+  unset PRQL_EXEC_OPTIONS
+  unset PRQL_EXEC_COMMAND
 
   # Process the imports
   prql-lib "$input"
@@ -148,21 +155,39 @@ prql-exec-fn() {
   fi
 }
 
+split-docs() {
+  local remaining="$1"
+  local doc=''
+  nl=$'\n'
+  regex_doc="^($nl?-{3,}$nl)?(.+)($|$nl-{3,}$nl.*)"
+  while [ -n "$remaining" ]; do
+    if [[ "$remaining" =~ $regex_doc ]]; then
+      doc="${BASH_REMATCH[2]}"
+      remaining="${BASH_REMATCH[3]}"
+      #echo -e "Found doc:\n'''\n$doc\n'''\n"
+      prql-exec-fn "$doc" "${@:2}"
+    else
+      echo -e "ERROR: Couldn't parse input:\n'''\n$remaining\n'''\n"
+      return 1
+    fi
+  done
+}
+
 # Add error handling
 error_handler() {
-    echo -e "\nERROR:" >&2
-    echo -e "\ninput=$input" >&2
-    echo -e "\nquery=${query:-NOT GENERATED}" >&2
-    echo -e "\nsql=${sql:-NOT GENERATED}" >&2
-    echo -e "\nPRQL_EXEC_COMMAND=${PRQL_EXEC_COMMAND:-NOT GENERATED}" >&2
+  echo -e "\nERROR:" >&2
+  echo -e "\ninput=$input" >&2
+  echo -e "\nquery=${query:-NOT GENERATED}" >&2
+  echo -e "\nsql=${sql:-NOT GENERATED}" >&2
+  echo -e "\nPRQL_EXEC_COMMAND=${PRQL_EXEC_COMMAND:-NOT GENERATED}" >&2
 }
 trap error_handler EXIT
 
 # Standardise input
-input=$( ([ $# -eq 0 ] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
+script_input=$( ([ $# -eq 0 ] || [[ "$1" == "-" ]] || [[ -f "$1" ]]) && cat "${1:--}" || echo -e "$1" )
 
 # Process the input
-prql-exec-fn "$input" "${@:2}"
+split-docs "$script_input" "${@:2}"
 
 # If we got here we succeeded so untrap the exit error handler
 trap - EXIT
