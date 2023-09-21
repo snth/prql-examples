@@ -1,0 +1,58 @@
+# Requires mergestat
+
+let stargazers = fullNameOrOwner name:'' -> (
+  from s"""SELECT * FROM github_stargazers({fullNameOrOwner}, {name})"""
+  select {starred_at, login, `name`, bio, created_at, updated_at, twitter, location}
+)
+
+let starred_repos = login -> (
+  from s"""SELECT * from github_starred_repos({login})"""
+  select {starred_at, name_with_owner, stargazer_count, created_at, pushed_at, updated_at}
+)
+
+let user = login -> (
+  from s"""SELECT * FROM json_each(github_user({login}))"""
+  select {key, value}
+)
+
+let user_repos = login affiliations:'' -> (
+  from s"""SELECT * FROM github_user_repos({login}, {affiliations})"""
+  select {database_id, description, default_branch_ref_name, created_at}
+)
+
+let org_repos = login affiliations:'' -> (
+  from s"""SELECT * FROM github_org_repos({login}, {affiliations})"""
+  select {database_id, description, license_key, fork_count, issue_count, default_branch_ref_name}
+)
+
+let repo_issues = fullNameOrOwner name:'' -> (
+  from s"""SELECT * FROM github_repo_issues({fullNameOrOwner}, {name})"""
+  select {number, title, author_login, comment_count, closed, created_at, closed_at}
+  select {number, title, author_login, state, participant_count, comment_count, created_at, closed_at}
+)
+
+let repo_prs = fullNameOrOwner name:'' -> (
+  from s"""SELECT * FROM github_repo_prs({fullNameOrOwner}, {name})"""
+  select {number, title, author_login, state, participant_count, comment_count, commit_count, additions, deletions, created_at, closed_at}
+)
+
+let repo_branches = fullNameOrOwner name:'' -> (
+  from s"""SELECT * FROM github_repo_branches({fullNameOrOwner}, {name})"""
+)
+
+let repo_branch_protections = fullNameOrOwner name:'' -> (
+  from s"""SELECT * FROM github_repo_branch_protections({fullNameOrOwner}, {name})"""
+)
+
+#let repo_file_content = fullNameOrOwner expression -> (
+#  from s"""SELECT * FROM github_repo_file_content({fullNameOrOwner}, {expression})"""
+#)
+
+let repo_issue_comments = fullNameOrOwner issue_number -> (
+  from s"""SELECT * FROM github_repo_issue_comments({fullNameOrOwner}, {issue_number})"""
+)
+
+let repo_commits = fullNameOrOwner  -> (
+  from s"""SELECT * FROM github_repo_commits({fullNameOrOwner})"""
+  select {hash, message, author_name, author_when, changed_files, additions, deletions}
+)
