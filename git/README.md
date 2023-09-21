@@ -17,17 +17,12 @@ brew install mergestat
 prql-exec "import git\nfrom git.commits|sort {-author_when}|take 5"
 ```
 
-### Top 10 committers
+### Top 10 authors
 
 ```sh
 prql-exec <<EOF
 import git
-
-from git.commits
-group {author_name} (
-  aggregate {num_commits = count this}
-)
-sort {-num_commits}
+from git.top_authors
 take 10
 EOF
 ```
