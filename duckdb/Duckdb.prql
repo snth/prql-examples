@@ -1,5 +1,7 @@
 # from functions
 
+let read_csv = filename -> s"SELECT * FROM read_csv_auto({filename})"
+
 let from_csv = filename:'/dev/stdin' -> (
   from s"""SELECT * FROM read_csv_auto({filename})"""
 )
