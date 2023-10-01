@@ -1,0 +1,16 @@
+# Run with: prqlc compile examples/google_cumret.prql | duckdb -csv | uplot -H -d, lines
+#import finance as fin
+let ln1p = x -> s"ln(1 + {x})"
+let expm1 = x -> s"(exp({x}) - 1)"
+let cumret = r -> (r | ln1p | sum | expm1)
+
+from `_data/google_stock.csv`
+window rows:..0 (
+  sort Date
+  derive {
+    day = row_number this,
+    sp500_tri = 100*(SP500_Return | cumret),
+    google_tri = 100*(Google_Return | cumret),
+  }
+)
+select {day, sp500_tri, google_tri}
