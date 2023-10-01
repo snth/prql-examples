@@ -1,0 +1,3 @@
+import math
+
+let cumret = r -> (r | math.ln1p | sum | math.expm1)

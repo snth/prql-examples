@@ -1,0 +1,4 @@
+let ln = x -> s"ln({x})"
+let ln1p = x -> s"ln(1 + {x})"
+let exp = x -> s"exp({x})"
+let expm1 = x -> s"(exp({x}) - 1)"
